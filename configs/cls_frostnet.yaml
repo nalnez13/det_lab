@@ -4,3 +4,4 @@ classes : 200
 epochs: 1000
 data_path : '/host_dir/fssv1/tiny_imagenet-200/'
 save_dir : './saved2'
+workers: 64
