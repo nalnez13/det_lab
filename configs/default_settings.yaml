@@ -4,9 +4,13 @@ workers: 4 # number of workers to generate data
 
 
 batch_size: 32
+epochs: 10
+
+save_freq: 5
+
 optimizer: 'sgd'
-lr: 1e-5
 optimizer_options:
+  lr: 1e-3
   nesterov: true
   momentum: 0.9
   weight_decay: 1e-5

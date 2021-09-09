@@ -8,7 +8,7 @@ from utils.module_select import get_optimizer
 
 
 class Classifier(pl.LightningModule):
-    def __init__(self, model, cfg, step_length=None):
+    def __init__(self, model, cfg, epoch_length=None):
         super().__init__()
         self.model = model
         self.save_hyperparameters(ignore='model')
@@ -33,16 +33,15 @@ class Classifier(pl.LightningModule):
         x, y = batch
         y_pred = self.model(x)['pred']
         loss = F.cross_entropy(y_pred, y)
-        self.log('val_loss', loss, prog_bar=True,
-                 logger=True, on_step=True, on_epoch=True)
+        self.log('val_loss', loss, logger=True, on_epoch=True)
         self.log('val_top1', self.top_1(y_pred, y),
-                 logger=True, on_step=True, on_epoch=True)
+                 logger=True, on_epoch=True)
         self.log('val_top5', self.top_5(y_pred, y),
-                 logger=True, on_step=True, on_epoch=True)
+                 logger=True, on_epoch=True)
 
     def configure_optimizers(self):
         cfg = self.hparams.cfg
-        step_length = self.hparams.step_length
+        epoch_length = self.hparams.epoch_length
         optim = get_optimizer(cfg['optimizer'])(
             params=self.model.parameters(),
             **cfg['optimizer_options'])
@@ -50,5 +49,5 @@ class Classifier(pl.LightningModule):
             optim,
             base_lr=cfg['optimizer_options']['lr']/10.,
             max_lr=cfg['optimizer_options']['lr'],
-            step_size_up=step_length*4 if step_length else 2000)
+            step_size_up=epoch_length*4 if epoch_length else 2000)
         return {"optimizer": optim, "lr_scheduler": scheduler}
