@@ -24,5 +24,4 @@ class Classifier(pl.LightningModule):
         cfg = self.hparams.cfg
         return get_optimizer(cfg['optimizer'])(
             params=self.model.parameters(),
-            lr=float(cfg['learning_rate']),
-            weight_decay=float(cfg['weight_decay']))
+            **cfg['optimizer_options'])
