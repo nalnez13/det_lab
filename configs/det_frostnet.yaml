@@ -1,0 +1,26 @@
+model : 'FrostNet'
+dataset_name : tiny-imagenet
+classes : 200
+data_path : '/workspace/host/tiny_imagenet-200/'
+save_dir : './saved'
+
+workers: 64
+epochs: 1000
+batch_size: 256
+
+save_freq: 5
+
+optimizer: 'sgd'
+optimizer_options:
+  lr: 3e-3
+  nesterov: true
+  momentum: 0.9
+  weight_decay: 1e-5
+
+trainer_options:
+  check_val_every_n_epoch: 5
+
+experimental_options:
+  callbaks: 
+    - 'QAT'
+    - 'SWA'
