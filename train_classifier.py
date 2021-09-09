@@ -3,6 +3,7 @@ import argparse
 import albumentations
 import albumentations.pytorch
 import pytorch_lightning as pl
+from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from dataset import tiny_imagenet
@@ -23,10 +24,14 @@ def train(cfg):
     model = get_model(cfg['model'])(in_channels=3, classes=cfg['classes'])
     model_module = Classifier(model, cfg=cfg)
     data_module = tiny_imagenet.TinyImageNet(
-        path=cfg['data_path'], workers=cfg['workers'], train_transforms=transforms, val_transforms=transforms, batch_size=cfg['batch_size'])
+        path=cfg['data_path'], workers=cfg['workers'],
+        train_transforms=transforms, val_transforms=transforms,
+        batch_size=cfg['batch_size'])
 
     trainer = pl.Trainer(
-        gpus=cfg['gpus'], logger=TensorBoardLogger(cfg['save_dir']))
+        gpus=cfg['gpus'], logger=TensorBoardLogger(cfg['save_dir']),
+        accelerator='ddp',
+        plugins=DDPPlugin(find_unused_parameters=False))
     trainer.fit(model_module, data_module)
 
 

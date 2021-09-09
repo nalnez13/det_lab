@@ -45,7 +45,8 @@ class TinyImageNetDataset(Dataset):
 
 
 class TinyImageNet(pl.LightningDataModule):
-    def __init__(self, path, workers, train_transforms, val_transforms, batch_size=None):
+    def __init__(self, path, workers, train_transforms, val_transforms,
+                 batch_size=None):
         super().__init__()
         self.path = path
         self.train_transforms = train_transforms
@@ -57,10 +58,12 @@ class TinyImageNet(pl.LightningDataModule):
         return DataLoader(TinyImageNetDataset(self.path,
                                               transforms=self.train_transforms,
                                               is_train=True),
-                          batch_size=self.batch_size, num_workers=self.workers)
+                          batch_size=self.batch_size, num_workers=self.workers, persistent_workers=self.workers > 0,
+                          pin_memory=self.workers > 0)
 
     def val_dataloader(self):
         return DataLoader(TinyImageNetDataset(self.path,
                                               transforms=self.val_transforms,
                                               is_train=False),
-                          batch_size=self.batch_size, num_workers=self.workers)
+                          batch_size=self.batch_size, num_workers=self.workers, persistent_workers=self.workers > 0,
+                          pin_memory=self.workers > 0)
