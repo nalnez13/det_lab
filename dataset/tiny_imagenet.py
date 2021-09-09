@@ -2,7 +2,6 @@ import os
 from torch.utils.data import Dataset, DataLoader
 import cv2
 import glob
-import numpy as np
 import pytorch_lightning as pl
 
 
@@ -58,12 +57,16 @@ class TinyImageNet(pl.LightningDataModule):
         return DataLoader(TinyImageNetDataset(self.path,
                                               transforms=self.train_transforms,
                                               is_train=True),
-                          batch_size=self.batch_size, num_workers=self.workers, persistent_workers=self.workers > 0,
+                          batch_size=self.batch_size,
+                          num_workers=self.workers,
+                          persistent_workers=self.workers > 0,
                           pin_memory=self.workers > 0)
 
     def val_dataloader(self):
         return DataLoader(TinyImageNetDataset(self.path,
                                               transforms=self.val_transforms,
                                               is_train=False),
-                          batch_size=self.batch_size, num_workers=self.workers, persistent_workers=self.workers > 0,
+                          batch_size=self.batch_size,
+                          num_workers=self.workers,
+                          persistent_workers=self.workers > 0,
                           pin_memory=self.workers > 0)

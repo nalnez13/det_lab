@@ -1,7 +1,5 @@
-from dataset.tiny_imagenet import TinyImageNetDataset
 import pytorch_lightning as pl
 import torch.nn.functional as F
-from torch.utils.data.dataloader import DataLoader
 
 from utils.module_select import get_optimizer
 

@@ -4,5 +4,8 @@
   "python.linting.flake8Enabled": true,
   "python.autoComplete.extraPaths": [
     "./"
+  ],
+  "python.analysis.extraPaths": [
+    "./"
   ]
 }

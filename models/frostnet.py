@@ -1,6 +1,6 @@
 from .layers.conv_block import Conv2dBn, Conv2dBnRelu
 from .initialize import weight_initialize
-from utils.divisible import make_divisible
+from utils.utility import make_divisible
 import torch
 from torch import nn
 

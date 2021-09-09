@@ -6,3 +6,7 @@ def make_divisible(v, divisor=8, min_value=None):
         new_v += divisor
 
     return new_v
+
+
+def make_model_name(cfg):
+    return cfg['model'] + '_' + cfg['dataset_name']
