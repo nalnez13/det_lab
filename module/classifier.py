@@ -49,8 +49,7 @@ class Classifier(pl.LightningModule):
             optim,
             base_lr=cfg['optimizer_options']['lr']/10.,
             max_lr=cfg['optimizer_options']['lr'],
-            step_size_up=epoch_length*4 if epoch_length else 2000,
-            verbose=True)
+            step_size_up=epoch_length*4 if epoch_length else 2000)
 
         return {"optimizer": optim,
                 "lr_scheduler": {
