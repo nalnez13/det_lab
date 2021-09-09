@@ -4,5 +4,5 @@ classes : 200
 epochs: 1000
 data_path : '/workspace/host/tiny_imagenet-200/'
 save_dir : './saved'
-workers: 1
+workers: 64
 batch_size: 256

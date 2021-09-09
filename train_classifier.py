@@ -33,7 +33,8 @@ def train(cfg):
         logger=TensorBoardLogger(cfg['save_dir'],
                                  make_model_name(cfg)),
         accelerator='ddp',
-        plugins=DDPPlugin(find_unused_parameters=False))
+        plugins=DDPPlugin(find_unused_parameters=False),
+        callbacks=[])
     trainer.fit(model_module, data_module)
 
 

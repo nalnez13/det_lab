@@ -1,5 +1,8 @@
 import pytorch_lightning as pl
+import torch
 import torch.nn.functional as F
+
+from torchmetrics import Accuracy
 
 from utils.module_select import get_optimizer
 
@@ -9,6 +12,8 @@ class Classifier(pl.LightningModule):
         super().__init__()
         self.model = model
         self.save_hyperparameters(ignore='model')
+        self.top_1 = Accuracy(top_k=1)
+        self.top_5 = Accuracy(top_k=5)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -17,6 +22,11 @@ class Classifier(pl.LightningModule):
 
         self.log('train_loss', loss, prog_bar=True,
                  logger=True, on_step=True, on_epoch=True)
+        self.log('train_top1', self.top_1(y_pred, y),
+                 logger=True, on_step=True, on_epoch=True)
+        self.log('train_top5', self.top_5(y_pred, y),
+                 logger=True, on_step=True, on_epoch=True)
+
         return loss
 
     def configure_optimizers(self):
