@@ -16,15 +16,23 @@ from module.classifier import Classifier
 
 
 def train(cfg):
-    transforms = albumentations.Compose([
+    train_transforms = albumentations.Compose([
         albumentations.HorizontalFlip(p=0.5),
         albumentations.VerticalFlip(p=0.5),
+        albumentations.Affine(),
+        albumentations.ColorJitter(),
+        albumentations.RandomBrightnessContrast(),
+        albumentations.Normalize(0, 1),
+        albumentations.pytorch.ToTensorV2(),
+    ],)
+
+    valid_transform = albumentations.Compose([
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ],)
     data_module = tiny_imagenet.TinyImageNet(
         path=cfg['data_path'], workers=cfg['workers'],
-        train_transforms=transforms, val_transforms=transforms,
+        train_transforms=train_transforms, val_transforms=valid_transform,
         batch_size=cfg['batch_size'])
 
     model = get_model(cfg['model'])(in_channels=3, classes=cfg['classes'])
