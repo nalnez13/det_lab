@@ -1,4 +1,5 @@
 import pytorch_lightning as pl
+import torch
 import torch.nn.functional as F
 
 from torchmetrics import Accuracy
@@ -7,7 +8,7 @@ from utils.module_select import get_optimizer
 
 
 class Classifier(pl.LightningModule):
-    def __init__(self, model, cfg, lr):
+    def __init__(self, model, cfg, step_length=None):
         super().__init__()
         self.model = model
         self.save_hyperparameters(ignore='model')
@@ -41,8 +42,13 @@ class Classifier(pl.LightningModule):
 
     def configure_optimizers(self):
         cfg = self.hparams.cfg
-        lr = self.hparams.lr
-        return get_optimizer(cfg['optimizer'])(
+        step_length = self.hparams.step_length
+        optim = get_optimizer(cfg['optimizer'])(
             params=self.model.parameters(),
-            lr=lr,
             **cfg['optimizer_options'])
+        scheduler = torch.optim.lr_scheduler.CyclicLR(
+            optim,
+            base_lr=cfg['optimizer_options']['lr']/10.,
+            max_lr=cfg['optimizer_options']['lr'],
+            step_size_up=step_length*4 if step_length else 2000)
+        return {"optimizer": optim, "lr_scheduler": scheduler}

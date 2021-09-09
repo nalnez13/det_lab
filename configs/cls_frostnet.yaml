@@ -8,6 +8,9 @@ workers: 64
 epochs: 1000
 batch_size: 256
 
+optimizer_options:
+  lr: 3e-3
+
 trainer_options:
   check_val_every_n_epoch: 5
 
