@@ -1,5 +1,5 @@
 from torch import optim
-from models.frostnet import FrostNet
+from models.backbone.frostnet import FrostNet
 
 
 def get_model(model_name):
