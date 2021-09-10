@@ -1,27 +1,33 @@
 import argparse
 
-from utils.utility import make_model_name
-
 import albumentations
 import albumentations.pytorch
 import pytorch_lightning as pl
-from pytorch_lightning.plugins import DDPPlugin
-from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.plugins import DDPPlugin
 
 from dataset import tiny_imagenet
-from utils.module_select import get_model
-from utils.yaml_helper import get_train_configs
 from module.classifier import Classifier
+from utils.module_select import get_model
+from utils.utility import make_model_name
+from utils.yaml_helper import get_train_configs
 
 
 def train(cfg):
     train_transforms = albumentations.Compose([
         albumentations.HorizontalFlip(p=0.5),
         albumentations.VerticalFlip(p=0.5),
-        albumentations.Affine(),
-        albumentations.ColorJitter(),
+        albumentations.Rotate(),
+        albumentations.Posterize(),
+        albumentations.RandomGamma(),
+        albumentations.Solarize(),
+        albumentations.Equalize(),
+        albumentations.HueSaturationValue(),
         albumentations.RandomBrightnessContrast(),
+        albumentations.ColorJitter(),
+        albumentations.Affine(),
+        albumentations.CropAndPad(percent=-0.1),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ],)
