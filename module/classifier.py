@@ -1,5 +1,5 @@
+from module.lr_scheduler import CosineAnnealingWarmUpRestarts
 import pytorch_lightning as pl
-import torch
 import torch.nn.functional as F
 
 from torchmetrics import Accuracy
@@ -55,7 +55,10 @@ class Classifier(pl.LightningModule):
         return {"optimizer": optim,
                 "lr_scheduler": {
                     "scheduler":
-                    torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-                        optim, epoch_length*4, 2),
+                    CosineAnnealingWarmUpRestarts(
+                        optim, epoch_length*4, 1,
+                        eta_max=cfg['optimizer_options']['lr'],
+                        T_up=epoch_length,
+                        gamma=),
                     'interval': 'step'}
                 }
