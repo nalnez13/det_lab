@@ -56,9 +56,10 @@ class Classifier(pl.LightningModule):
                 "lr_scheduler": {
                     "scheduler":
                     CosineAnnealingWarmUpRestarts(
-                        optim, epoch_length*4, 1,
+                        optim, epoch_length*4,
+                        T_mult=2,
                         eta_max=cfg['optimizer_options']['lr'],
                         T_up=epoch_length,
-                        gamma=),
+                        gamma=0.98),
                     'interval': 'step'}
                 }
