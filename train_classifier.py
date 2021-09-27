@@ -7,7 +7,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.plugins import DDPPlugin
 
-from dataset import tiny_imagenet
+from dataset.classfication import tiny_imagenet
 from module.classifier import Classifier
 from utils.module_select import get_model
 from utils.utility import make_model_name
