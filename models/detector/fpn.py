@@ -1,9 +1,15 @@
-from albumentations.augmentations.functional import pad
 from torch import nn
 
 
 class FeaturesPyramidNetwork(nn.Module):
     def __init__(self, fpn_sizes, feature_size=256):
+        """FPN 구현
+
+        Args:
+            fpn_sizes (list): [s3, s4, s5] stage의 output ch 값
+            feature_size (int, optional): FPN 내부 Convoluiton Filter 수
+                                          Defaults to 256.
+        """
         super().__init__()
         s3_size, s4_size, s5_size = fpn_sizes
         self.P5_1 = nn.Conv2d(s5_size, feature_size,
