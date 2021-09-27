@@ -45,6 +45,10 @@ class YoloDataset(Dataset):
 
 
 if __name__ == '__main__':
+    """
+    Data loader 테스트 코드
+    python -m dataset.detection.yolo_format
+    """
     from torch.utils.data import DataLoader
     from dataset.detection.utils import collater
     import albumentations

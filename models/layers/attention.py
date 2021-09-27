@@ -1,6 +1,3 @@
-import torch
-
-
 from torch import nn
 from torch.nn.modules.activation import Hardsigmoid
 
