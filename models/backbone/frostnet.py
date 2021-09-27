@@ -36,6 +36,7 @@ class _FrostNetSmall(nn.Module):
         self.in_channels = stem_channels
         self.width_mult = width_mult
         self.stem = Conv2dBnRelu(in_channels, stem_channels, 3, 2)
+        self.stage_channels = []
 
         # config kernel_size, output_ch, ef, rfs, stride
         layer1 = [
@@ -94,15 +95,16 @@ class _FrostNetSmall(nn.Module):
             layers.append(FrostConv(self.in_channels,
                           rf, ef, out_channels, k, s))
             self.in_channels = out_channels
+        self.stage_channels.append(self.in_channels)
         return nn.Sequential(*layers)
 
 
-def FrostNet(in_channels, classes, varient='small'):
+def FrostNet(in_channels, classes=1000, varient='small'):
     if varient == 'small':
         model = _FrostNetSmall(in_channels, classes)
 
     else:
-        raise Exception('No such models {}'.format(varient))
+        raise Exception('No such models FrostNet_{}'.format(varient))
 
     weight_initialize(model)
     return model

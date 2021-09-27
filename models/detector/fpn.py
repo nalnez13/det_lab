@@ -11,6 +11,7 @@ class FeaturesPyramidNetwork(nn.Module):
                                           Defaults to 256.
         """
         super().__init__()
+        self.feature_size = feature_size
         s3_size, s4_size, s5_size = fpn_sizes
         self.P5_1 = nn.Conv2d(s5_size, feature_size,
                               kernel_size=1, stride=1, padding=0)
@@ -29,23 +30,22 @@ class FeaturesPyramidNetwork(nn.Module):
         self.P3_2 = nn.Conv2d(feature_size, feature_size,
                               kernel_size=3, stride=1, padding=1)
 
-        self.P6 = nn.Conv2d(s5_size, feature_size,
+        self.P6 = nn.Conv2d(feature_size, feature_size,
                             kernel_size=3, stride=2, padding=1)
 
         self.P7_1 = nn.ReLU()
         self.P7_2 = nn.Conv2d(feature_size, feature_size,
                               kernel_size=3, stride=2, padding=1)
 
-    def forward(self, stages):
+    def forward(self, s3, s4, s5):
         """FPN Forward
 
         Args:
-            stages ([list]): list of feature map stages. [s1 ~ s5], len == 5
+            s3, s4, s5 ([tensor]): feature map stages
 
         Returns:
             [list]: fused feature maps of stages [p3, p4, p5, p6, p7]
         """
-        s3, s4, s5 = stages[2:]
 
         P5_x = self.P5_1(s5)
         P5_upsampled_x = self.P5_upsampled(P5_x)
