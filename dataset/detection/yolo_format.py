@@ -1,8 +1,9 @@
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import cv2
 import glob
 import numpy as np
 import pytorch_lightning as pl
+from dataset.detection.utils import collater
 
 
 class YoloDataset(Dataset):
@@ -46,7 +47,8 @@ class YoloDataset(Dataset):
 
 
 class YoloFormat(pl.LightningDataModule):
-    def __init__(self, train_list, val_list, workers, train_transforms, val_transforms,
+    def __init__(self, train_list, val_list, workers, train_transforms,
+                 val_transforms,
                  batch_size=None):
         super().__init__()
         self.train_list = train_list
@@ -58,9 +60,9 @@ class YoloFormat(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(YoloDataset(
-            transforms=train_transforms,
+            transforms=self.train_transforms,
             files_list=self.train_list),
-            batch_size=16,
+            batch_size=self.batch_size,
             shuffle=True,
             num_workers=self.workers,
             persistent_workers=self.workers > 0,
@@ -71,7 +73,7 @@ class YoloFormat(pl.LightningDataModule):
         return DataLoader(YoloDataset(
             transforms=self.val_transforms,
             files_list=self.val_list),
-            batch_size=16,
+            batch_size=self.batch_size,
             shuffle=True,
             num_workers=self.workers,
             persistent_workers=self.workers > 0,
@@ -84,8 +86,6 @@ if __name__ == '__main__':
     Data loader 테스트 코드
     python -m dataset.detection.yolo_format
     """
-    from torch.utils.data import DataLoader
-    from dataset.detection.utils import collater
     import albumentations
     import albumentations.pytorch
     from dataset.detection.utils import visualize
