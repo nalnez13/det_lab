@@ -10,7 +10,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
 from dataset.detection import yolo_format
-from utils.module_select import get_cls_subnet, get_fpn, get_model
+from utils.module_select import get_cls_subnet, get_fpn, get_model, get_reg_subnet
 from utils.yaml_helper import get_train_configs
 
 from module.detector import Detector
@@ -48,7 +48,7 @@ def train(cfg):
     backbone = get_model(cfg['backbone'])
     fpn = get_fpn(cfg['fpn'])
     cls_sub = get_cls_subnet(cfg['cls_subnet'])
-    reg_sub = get_cls_subnet(cfg['reg_subnet'])
+    reg_sub = get_reg_subnet(cfg['reg_subnet'])
 
     model = RetinaNet(backbone, fpn, cls_sub, reg_sub,
                       cfg['classes'], cfg['in_channels'])
@@ -65,8 +65,9 @@ def train(cfg):
         logger=TensorBoardLogger(cfg['save_dir'],
                                  make_model_name(cfg)),
         gpus=cfg['gpus'],
-        accelerator='ddp',
-        plugins=DDPPlugin(find_unused_parameters=False),
+        accelerator='ddp' if cfg['experimental_options']['os'] != 'windows' else None,
+        plugins=DDPPlugin(
+            find_unused_parameters=False) if cfg['experimental_options']['os'] != 'windows' else None,
         callbacks=callbacks,
         **cfg['trainer_options'])
     trainer.fit(model_module, data_module)

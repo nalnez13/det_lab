@@ -1,6 +1,9 @@
+model: 'Frost_RetinaNet'
 dataset_name: 'VOC'
 classes: 20
 in_channels: 3
+train_list: 'e:/voc_train.txt'
+val_list: 'e:/voc_val.txt'
 
 workers: 32
 epochs: 1000
@@ -26,6 +29,7 @@ trainer_options:
   check_val_every_n_epoch: 5
 
 experimental_options:
+  os: 'windows'
   callbaks:
     - 'QAT'
     - 'SWA'
