@@ -9,35 +9,50 @@ from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
-from dataset import tiny_imagenet
-from utils.module_select import get_model
+from dataset.detection import yolo_format
+from utils.module_select import get_cls_subnet, get_fpn, get_model
 from utils.yaml_helper import get_train_configs
-from module.classifier import Classifier
+
+from module.detector import Detector
+from models.detector.retinanet import RetinaNet
 
 
 def train(cfg):
     train_transforms = albumentations.Compose([
         albumentations.HorizontalFlip(p=0.5),
         albumentations.VerticalFlip(p=0.5),
-        albumentations.Affine(),
-        albumentations.ColorJitter(),
+        albumentations.Posterize(),
+        albumentations.RandomGamma(),
+        albumentations.Equalize(),
+        albumentations.HueSaturationValue(),
         albumentations.RandomBrightnessContrast(),
+        albumentations.ColorJitter(),
+        albumentations.ShiftScaleRotate(),
+        albumentations.Resize(300, 300, always_apply=True),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
-    ],)
+    ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
 
     valid_transform = albumentations.Compose([
+        albumentations.Resize(300, 300, always_apply=True),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
-    ],)
-    data_module = tiny_imagenet.TinyImageNet(
-        path=cfg['data_path'], workers=cfg['workers'],
-        train_transforms=train_transforms, val_transforms=valid_transform,
-        batch_size=cfg['batch_size'])
+    ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
 
-    model = get_model(cfg['model'])(in_channels=3, classes=cfg['classes'])
-    model_module = Classifier(
-        model, cfg=cfg, epoch_length=data_module.train_dataloader().__len__())
+    data_module = yolo_format.YoloFormat(
+        train_list=cfg['train_list'], val_list=cfg['val_list'],
+        workers=cfg['workers'], batch_size=cfg['batch_size'],
+        train_transforms=train_transforms, val_transforms=valid_transform
+    )
+
+    backbone = get_model(cfg['backbone'])
+    fpn = get_fpn(cfg['fpn'])
+    cls_sub = get_cls_subnet(cfg['cls_subnet'])
+    reg_sub = get_cls_subnet(cfg['reg_subnet'])
+
+    model = RetinaNet(backbone, fpn, cls_sub, reg_sub,
+                      cfg['classes'], cfg['in_channels'])
+    model_module = Detector(model, cfg)
 
     callbacks = [
         LearningRateMonitor(logging_interval='step'),

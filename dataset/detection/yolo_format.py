@@ -2,6 +2,7 @@ from torch.utils.data import Dataset
 import cv2
 import glob
 import numpy as np
+import pytorch_lightning as pl
 
 
 class YoloDataset(Dataset):
@@ -42,6 +43,40 @@ class YoloDataset(Dataset):
                 boxes = np.append(boxes, annotation, axis=0)
 
         return boxes
+
+
+class YoloFormat(pl.LightningDataModule):
+    def __init__(self, train_list, val_list, workers, train_transforms, val_transforms,
+                 batch_size=None):
+        super().__init__()
+        self.train_list = train_list
+        self.val_list = val_list
+        self.train_transforms = train_transforms
+        self.val_transforms = val_transforms
+        self.batch_size = batch_size
+        self.workers = workers
+
+    def train_dataloader(self):
+        return DataLoader(YoloDataset(
+            transforms=train_transforms,
+            files_list=self.train_list),
+            batch_size=16,
+            shuffle=True,
+            num_workers=self.workers,
+            persistent_workers=self.workers > 0,
+            pin_memory=self.workers > 0,
+            collate_fn=collater)
+
+    def val_dataloader(self):
+        return DataLoader(YoloDataset(
+            transforms=self.val_transforms,
+            files_list=self.val_list),
+            batch_size=16,
+            shuffle=True,
+            num_workers=self.workers,
+            persistent_workers=self.workers > 0,
+            pin_memory=self.workers > 0,
+            collate_fn=collater)
 
 
 if __name__ == '__main__':

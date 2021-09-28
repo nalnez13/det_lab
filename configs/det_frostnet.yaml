@@ -1,14 +1,19 @@
-model : 'FrostNet'
-dataset_name : tiny-imagenet
-classes : 200
-data_path : '/workspace/host/tiny_imagenet-200/'
-save_dir : './saved'
+dataset_name: 'VOC'
+classes: 20
+in_channels: 3
 
-workers: 64
+workers: 32
 epochs: 1000
 batch_size: 256
 
 save_freq: 5
+save_dir: './saved'
+
+# model Define
+backbone: 'FrostNet'
+fpn: 'default'
+cls_subnet: 'default'
+reg_subnet: 'default'
 
 optimizer: 'sgd'
 optimizer_options:
@@ -21,6 +26,6 @@ trainer_options:
   check_val_every_n_epoch: 5
 
 experimental_options:
-  callbaks: 
+  callbaks:
     - 'QAT'
     - 'SWA'
