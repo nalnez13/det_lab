@@ -1,68 +1,35 @@
-import argparse
-
-from utils.utility import make_model_name
-
-import albumentations
-import albumentations.pytorch
+from models.detector.anchors import Anchors
 import pytorch_lightning as pl
-from pytorch_lightning.plugins import DDPPlugin
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
-
-from dataset import tiny_imagenet
-from utils.module_select import get_model
-from utils.yaml_helper import get_train_configs
-from module.classifier import Classifier
+from utils.module_select import get_optimizer
+from module.lr_scheduler import CosineAnnealingWarmUpRestarts
 
 
-def train(cfg):
-    train_transforms = albumentations.Compose([
-        albumentations.HorizontalFlip(p=0.5),
-        albumentations.VerticalFlip(p=0.5),
-        albumentations.Affine(),
-        albumentations.ColorJitter(),
-        albumentations.RandomBrightnessContrast(),
-        albumentations.Normalize(0, 1),
-        albumentations.pytorch.ToTensorV2(),
-    ],)
+class Detector(pl.LightningModule):
+    def __init__(self, model, cfg, epoch_length=None):
+        super().__init__()
+        self.model = model
+        self.save_hyperparameters(ignore='model')
 
-    valid_transform = albumentations.Compose([
-        albumentations.Normalize(0, 1),
-        albumentations.pytorch.ToTensorV2(),
-    ],)
-    data_module = tiny_imagenet.TinyImageNet(
-        path=cfg['data_path'], workers=cfg['workers'],
-        train_transforms=train_transforms, val_transforms=valid_transform,
-        batch_size=cfg['batch_size'])
+        self.anchors = Anchors()
 
-    model = get_model(cfg['model'])(in_channels=3, classes=cfg['classes'])
-    model_module = Classifier(
-        model, cfg=cfg, epoch_length=data_module.train_dataloader().__len__())
+    def training_step(self, batch, batch_idx):
+        return super().training_step()
 
-    callbacks = [
-        LearningRateMonitor(logging_interval='step'),
-        ModelCheckpoint(monitor='val_loss', save_last=True,
-                        every_n_epochs=cfg['save_freq'])
-    ]
+    def configure_optimizers(self):
+        cfg = self.hparams.cfg
+        epoch_length = self.hparams.epoch_length
+        optim = get_optimizer(cfg['optimizer'])(
+            params=self.model.parameters(),
+            **cfg['optimizer_options'])
 
-    trainer = pl.Trainer(
-        max_epochs=cfg['epochs'],
-        logger=TensorBoardLogger(cfg['save_dir'],
-                                 make_model_name(cfg)),
-        gpus=cfg['gpus'],
-        accelerator='ddp',
-        plugins=DDPPlugin(find_unused_parameters=False),
-        callbacks=callbacks,
-        **cfg['trainer_options'])
-    trainer.fit(model_module, data_module)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', required=True, type=str,
-                        help='Train config file')
-
-    args = parser.parse_args()
-    cfg = get_train_configs(args.cfg)
-
-    train(cfg)
+        return {"optimizer": optim,
+                "lr_scheduler": {
+                    "scheduler":
+                    CosineAnnealingWarmUpRestarts(
+                        optim, epoch_length*4,
+                        T_mult=2,
+                        eta_max=cfg['optimizer_options']['lr'],
+                        T_up=epoch_length,
+                        gamma=0.98),
+                    'interval': 'step'}
+                }

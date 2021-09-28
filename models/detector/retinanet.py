@@ -1,6 +1,5 @@
 import torch
 from models.detector.fpn import FeaturesPyramidNetwork
-from cv2 import sepFilter2D
 from torch import nn
 import math
 

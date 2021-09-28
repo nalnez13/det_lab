@@ -46,12 +46,6 @@ class Classifier(pl.LightningModule):
             params=self.model.parameters(),
             **cfg['optimizer_options'])
 
-        # scheduler = torch.optim.lr_scheduler.CyclicLR(
-        #     optim,
-        #     base_lr=cfg['optimizer_options']['lr']/10.,
-        #     max_lr=cfg['optimizer_options']['lr'],
-        #     step_size_up=epoch_length*4 if epoch_length else 2000)
-
         return {"optimizer": optim,
                 "lr_scheduler": {
                     "scheduler":
