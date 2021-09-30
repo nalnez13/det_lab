@@ -5,9 +5,9 @@ in_channels: 3
 train_list: 'e:/voc_train.txt'
 val_list: 'e:/voc_val.txt'
 
-workers: 32
+workers: 1
 epochs: 1000
-batch_size: 256
+batch_size: 12
 
 save_freq: 5
 save_dir: './saved'
@@ -29,7 +29,7 @@ trainer_options:
   check_val_every_n_epoch: 5
 
 experimental_options:
-  os: 'windows'
+  os: 'windows' # add this option if an error about NCCL occurs in windows
   callbaks:
     - 'QAT'
     - 'SWA'

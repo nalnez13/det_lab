@@ -1,4 +1,4 @@
-from models.detector.anchors import Anchors
+from models.loss.multibox_loss import MultiBoxLoss
 import pytorch_lightning as pl
 from utils.module_select import get_optimizer
 from module.lr_scheduler import CosineAnnealingWarmUpRestarts
@@ -10,10 +10,12 @@ class Detector(pl.LightningModule):
         self.model = model
         self.save_hyperparameters(ignore='model')
 
-        self.anchors = Anchors()
+        self.loss_fn = MultiBoxLoss()
 
     def training_step(self, batch, batch_idx):
-        return super().training_step()
+        cls_pred, reg_pred = self.model(batch['img'])
+        loss = self.loss_fn([cls_pred, reg_pred, batch])
+        return loss
 
     def configure_optimizers(self):
         cfg = self.hparams.cfg

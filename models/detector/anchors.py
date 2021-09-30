@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 import numpy as np
 
@@ -23,10 +24,10 @@ class Anchors(nn.Module):
             self.sizes = [2**(x+2) for x in self.pyramid_levels]
 
         if ratios is None:
-            self.ratios = np.array([0.5, 1, 2])
+            self.ratios = torch.tensor([0.5, 1, 2])
 
         if scales is None:
-            self.scales = np.array(
+            self.scales = torch.tensor(
                 [2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)])
 
         if strides is None:
@@ -40,34 +41,39 @@ class Anchors(nn.Module):
         Args:
             image (Tensor): [C, H, W]의 Torch Tensor
         """
-        img_shape = np.array(image.shape[1:])
+        img_shape = torch.tensor(image.shape[2:])
         img_shapes = [(img_shape + 2 ** x - 1) // (2**x)
                       for x in self.pyramid_levels]
 
+        all_anchors = torch.zeros((0, 4))
         for idx in range(len(self.pyramid_levels)):
             anchors = self.generate_anchors_per_pyramid(
                 self.sizes[idx], self.scales, self.ratios)
-            self.spread_anchors(img_shapes[idx], self.strides[idx], anchors)
+            anchors = self.spread_anchors(
+                img_shapes[idx], self.strides[idx], anchors)
+            all_anchors = torch.cat((all_anchors, anchors), dim=0)
+        return all_anchors.to(image.device)
 
     def generate_anchors_per_pyramid(self, base_size, scales, ratios):
-        anchors = np.zeros((self.num_anchors, 4))
-        anchors[:, 2:] = base_size * np.tile(scales, (2, len(ratios))).T
+        anchors = torch.zeros((self.num_anchors, 4))
+        anchors[:, 2:] = base_size * torch.tile(scales, (2, len(ratios))).T
 
         areas = anchors[:, 2] * anchors[:, 3]
-        anchors[:, 2] = np.sqrt(areas/np.repeat(ratios, len(scales)))
-        anchors[:, 3] = anchors[:, 2] * np.repeat(ratios, len(scales))
 
-        anchors[:, 0::2] -= np.tile(anchors[:, 2] * 0.5, (2, 1)).T
-        anchors[:, 1::2] -= np.tile(anchors[:, 3] * 0.5, (2, 1)).T
+        anchors[:, 2] = torch.sqrt(areas/ratios.repeat(len(scales)))
+        anchors[:, 3] = anchors[:, 2] * ratios.repeat(len(scales))
+
+        anchors[:, 0::2] -= torch.tile(anchors[:, 2] * 0.5, (2, 1)).T
+        anchors[:, 1::2] -= torch.tile(anchors[:, 3] * 0.5, (2, 1)).T
         return anchors
 
     def spread_anchors(self, img_shape, stride, anchors):
-        shift_x = (np.arange(0, img_shape[1]) + 0.5) * stride
-        shift_y = (np.arange(0, img_shape[0]) + 0.5) * stride
+        shift_x = (torch.arange(0, img_shape[1]) + 0.5) * stride
+        shift_y = (torch.arange(0, img_shape[0]) + 0.5) * stride
 
-        shift_x, shift_y = np.meshgrid(shift_x, shift_y)
+        shift_x, shift_y = torch.meshgrid(shift_x, shift_y)
 
-        shifts = np.vstack((
+        shifts = torch.vstack((
             shift_x.ravel(), shift_y.ravel(),
             shift_x.ravel(), shift_y.ravel()
         )).T
@@ -75,11 +81,13 @@ class Anchors(nn.Module):
         A = anchors.shape[0]
         K = shifts.shape[0]
         all_anchors = anchors.reshape(
-            (1, A, 4)) + shifts.reshape(1, K, 4).transpose(1, 0, 2)
+            (1, A, 4)) + shifts.reshape(1, K, 4).permute(1, 0, 2)
         all_anchors = all_anchors.reshape((K*A, 4))
-        # print(all_anchors)
+        return all_anchors
 
 
 if __name__ == '__main__':
     a = Anchors()
-    print(a(np.zeros((3, 320, 320))))
+    anchors = a(torch.zeros((1, 3, 320, 320)))
+    print(anchors)
+    print(anchors.shape)

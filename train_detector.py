@@ -28,13 +28,13 @@ def train(cfg):
         albumentations.RandomBrightnessContrast(),
         albumentations.ColorJitter(),
         albumentations.ShiftScaleRotate(),
-        albumentations.Resize(300, 300, always_apply=True),
+        albumentations.Resize(320, 320, always_apply=True),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
 
     valid_transform = albumentations.Compose([
-        albumentations.Resize(300, 300, always_apply=True),
+        albumentations.Resize(320, 320, always_apply=True),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
@@ -52,7 +52,8 @@ def train(cfg):
 
     model = RetinaNet(backbone, fpn, cls_sub, reg_sub,
                       cfg['classes'], cfg['in_channels'])
-    model_module = Detector(model, cfg)
+    model_module = Detector(
+        model, cfg, epoch_length=data_module.train_dataloader().__len__())
 
     callbacks = [
         LearningRateMonitor(logging_interval='step'),
@@ -65,9 +66,7 @@ def train(cfg):
         logger=TensorBoardLogger(cfg['save_dir'],
                                  make_model_name(cfg)),
         gpus=cfg['gpus'],
-        accelerator='ddp' if cfg['experimental_options']['os'] != 'windows' else None,
-        plugins=DDPPlugin(
-            find_unused_parameters=False) if cfg['experimental_options']['os'] != 'windows' else None,
+
         callbacks=callbacks,
         **cfg['trainer_options'])
     trainer.fit(model_module, data_module)
