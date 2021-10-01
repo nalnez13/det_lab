@@ -12,6 +12,10 @@ class Detector(pl.LightningModule):
 
         self.loss_fn = MultiBoxLoss()
 
+    def forward(self, x):
+        cls_pred, reg_pred = self.model(x)
+        return cls_pred, reg_pred
+
     def training_step(self, batch, batch_idx):
         cls_pred, reg_pred = self.model(batch['img'])
         loss = self.loss_fn([cls_pred, reg_pred, batch])

@@ -18,6 +18,14 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal"
+    },
+    {
+      "name": "test_detector",
+      "type": "python",
+      "request": "launch",
+      "program": "test_detector.py",
+      "console": "integratedTerminal",
+      "args": ["--cfg", "./configs/det_frostnet.yaml"]
     }
   ]
 }

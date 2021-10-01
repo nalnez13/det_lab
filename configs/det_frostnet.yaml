@@ -9,7 +9,7 @@ workers: 1
 epochs: 1000
 batch_size: 12
 
-save_freq: 5
+save_freq: 1
 save_dir: './saved'
 
 # model Define
