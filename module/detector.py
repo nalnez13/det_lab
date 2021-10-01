@@ -15,6 +15,17 @@ class Detector(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         cls_pred, reg_pred = self.model(batch['img'])
         loss = self.loss_fn([cls_pred, reg_pred, batch])
+
+        self.log('train_loss', loss, prog_bar=True,
+                 logger=True, on_step=True, on_epoch=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        cls_pred, reg_pred = self.model(batch['img'])
+        loss = self.loss_fn([cls_pred, reg_pred, batch])
+
+        self.log('val_loss', loss, logger=True, on_epoch=True)
+
         return loss
 
     def configure_optimizers(self):
