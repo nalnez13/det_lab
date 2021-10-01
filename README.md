@@ -5,11 +5,13 @@ Classifier 우선 구현 후 Detector 구현 중입니다.
 
 PyTorch Lightning을 사용하여 코드 모듈화 및 하이퍼 파라미터 테스트 등을 고려해 작성 중입니다.
 
-## TODO
+## TODOs
 
-- Object Detector 코드 구현
-- FPN, PAN 등 Neck 추가
-- Focal Loss, cIoU 등 Loss 함수 구현
+- ~~Object Detector 코드 구현~~
+- ~~FPN 구현~~
+- PAN 등 Neck 추가
+- ~~Focal Loss 구현~~
+- cIoU 등 추가 Loss 함수 구현
 - ATSS, Data Augmentation, LR Scheduler, Optimizer 등 mAP 향상을 위한 tricks 추가
 - mAP Evaluation 스크립트 추가
 - Deployment를 위한 Torch Script, ONNX Conversion Script 추가
@@ -66,4 +68,4 @@ Train 스크립트 실행 시 입력되는 CFG 파일로 하이퍼파라미터 �
 
 ## train detector
 
-    TBD
+    python train_detector.py --cfg configs/det_frostnet.yaml
