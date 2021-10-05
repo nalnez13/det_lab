@@ -90,7 +90,7 @@ def main(cfg, image_name, save):
     cv2.imshow('test', image)
     cv2.waitKey(0)
     if save:
-        cv2.imwrite('./saved/inference.png')
+        cv2.imwrite('./saved/inference.png', image)
 
 
 if __name__ == '__main__':
