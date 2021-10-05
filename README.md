@@ -72,5 +72,7 @@ Train 스크립트 실행 시 입력되는 CFG 파일로 하이퍼파라미터 �
 
 ## Reference
 
+- [FrostNet: Towards Quantization-Aware Network Architecture Search-CLOVA AI](https://arxiv.org/abs/2006.09679)
+  - [Official Github](https://github.com/clovaai/frostnet#pretrained)
 - [Focal Loss for Dense Object Detection](https://arxiv.org/abs/1708.02002)
   - [pytorch-retinanet](https://github.com/yhenon/pytorch-retinanet)
