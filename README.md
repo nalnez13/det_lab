@@ -69,3 +69,8 @@ Train 스크립트 실행 시 입력되는 CFG 파일로 하이퍼파라미터 �
 ## train detector
 
     python train_detector.py --cfg configs/det_frostnet.yaml
+
+## Reference
+
+- [Focal Loss for Dense Object Detection](https://arxiv.org/abs/1708.02002)
+  - [pytorch-retinanet](https://github.com/yhenon/pytorch-retinanet)
