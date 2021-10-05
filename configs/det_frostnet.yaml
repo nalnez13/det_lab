@@ -4,6 +4,7 @@ classes: 20
 in_channels: 3
 train_list: 'e:/voc_test.txt'
 val_list: 'e:/voc_test.txt'
+names: '/dataset/detection/names/pascal_voc.txt'
 
 workers: 1
 epochs: 1000
