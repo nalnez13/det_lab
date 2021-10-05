@@ -26,6 +26,9 @@ def collater(data):
         padded_annots = torch.ones((batch_size, max_num_annots, 5)) * -1
         for idx, annot in enumerate(bboxes):
             if annot.shape[0] > 0:
+                # To x1, y1, x2, y2
+                annot[:, 2] += annot[:, 0]
+                annot[:, 3] += annot[:, 1]
                 padded_annots[idx, :annot.shape[0], :] = annot
     else:
         padded_annots = torch.ones((batch_size, 1, 5)) * -1
