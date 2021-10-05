@@ -1,22 +1,17 @@
 # det-lab
 
-PyTorch 기반 모델 및 학습 코드입니다.  
-Classifier 우선 구현 후 Detector 구현 중입니다.
+![example](./docs/inference_result.png)
 
-PyTorch Lightning을 사용하여 코드 모듈화 및 하이퍼 파라미터 테스트 등을 고려해 작성 중입니다.
+PyTorch 기반 Object Detection 모델 구조 및 학습 기법을 테스트하기 위한 프로젝트입니다.
 
 ## TODOs
 
-- ~~Object Detector 코드 구현~~
-- ~~FPN 구현~~
-- PAN 등 Neck 추가
-- ~~Focal Loss 구현~~
 - cIoU 등 추가 Loss 함수 구현
 - ATSS, Data Augmentation, LR Scheduler, Optimizer 등 mAP 향상을 위한 tricks 추가
 - mAP Evaluation 스크립트 추가
 - Deployment를 위한 Torch Script, ONNX Conversion Script 추가
 - QAT, Grad Clip, SWA, FP16 등 학습 기법 추가 및 테스트
-- Backbone 추가 (MobileNet, EfficientNet, ResNet, RegNet 등)
+- 테스트용 Backbone 추가 (MobileNet, EfficientNet, ResNet, RegNet 등)
 
 ## 프로젝트 구조
 
@@ -62,13 +57,29 @@ Train 스크립트 실행 시 입력되는 CFG 파일로 하이퍼파라미터 �
     workers: 16
     ...
 
-## train classifier
+## Train Backbone
+
+Backbone 모델을 Classifier로 Pre-train 시키기 위한 스크립트 입니다.
 
     python train_classifier.py --cfg configs/cls_frostnet.yaml
 
-## train detector
+## Train detector
+
+Object Detector 모델 Train 스크립트 입니다.
 
     python train_detector.py --cfg configs/det_frostnet.yaml
+
+## Test detector
+
+학습된 Object Detector로 inference test를 하기 위한 스크립트 입니다.
+
+    python .\test_detector.py --cfg .\configs\det_frostnet.yaml --save
+
+## Evalulate
+
+학습된 Object Detector의 mAP를 평가하는 스크립트 입니다.
+
+    TBD
 
 ## Reference
 
