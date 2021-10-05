@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-import numpy as np
 
 
 class Anchors(nn.Module):
@@ -12,16 +11,23 @@ class Anchors(nn.Module):
         self.ratios = ratios
         self.scales = scales
         self.strides = strides
+        self.size_factors = None
 
         if pyramid_levels is None:
             self.pyramid_levels = [3, 4, 5, 6, 7]
 
         if sizes is None:
-            # TODO: Image 크기랑 관계없이 32 ~ 512 크기의 Anchor를 사용하는데...
-            # 이미지 크기에 따라 가변돼야 할 듯.
-            # RetinaNet은 800~1333 정도 크기 이미지를 입력받음
-            # 적절한 Size Mapping 수식 필요
+            # NOTE: RetinaNet은 800~1333 크기의 이미지에 32 ~ 512 크기의 Anchor를 사용함
+            # 사용할 모델은 작은 해상도를 사용하므로 대응되지 않음
+            # 입력 이미지에 따라 대응되도록 SSD의 0.2~0.9 Size Factor 수식으로 대체함
             self.sizes = [2**(x+2) for x in self.pyramid_levels]
+            min_size_scale = 0.2
+            max_size_scale = 0.9
+            self.size_factors = [
+                min_size_scale + (max_size_scale - min_size_scale) /
+                (len(self.pyramid_levels)-1) *
+                x for x in range(len(self.pyramid_levels))]
+            self.size_factors = torch.tensor(self.size_factors)
 
         if ratios is None:
             self.ratios = torch.tensor([0.5, 1, 2])
@@ -44,6 +50,7 @@ class Anchors(nn.Module):
         img_shape = torch.tensor(image.shape[2:])
         img_shapes = [(img_shape + 2 ** x - 1) // (2**x)
                       for x in self.pyramid_levels]
+        self.sizes = torch.mean(img_shape.float()) * self.size_factors
 
         all_anchors = torch.zeros((0, 4))
         for idx in range(len(self.pyramid_levels)):
