@@ -4,14 +4,16 @@
 
 PyTorch 기반 Object Detection 모델 구조 및 학습 기법을 테스트하기 위한 프로젝트입니다.
 
-## TODOs
+## Implementations
 
-- cIoU 등 추가 Loss 함수 구현
-- ATSS, Data Augmentation, LR Scheduler, Optimizer 등 mAP 향상을 위한 tricks 추가
-- mAP Evaluation 스크립트 추가
-- Deployment를 위한 Torch Script, ONNX Conversion Script 추가
-- QAT, Grad Clip, SWA, FP16 등 학습 기법 추가 및 테스트
-- 테스트용 Backbone 추가 (MobileNet, EfficientNet, ResNet, RegNet 등)
+- RetinaNet
+- FrostNet
+- Focal Loss
+- Muti GPU Training
+- Data Augmentations
+- mAP Calculation
+- Cosine Annealing Warmup Restart L.R. Scheduler
+-
 
 ## 프로젝트 구조
 
@@ -87,3 +89,11 @@ Object Detector 모델 Train 스크립트 입니다.
   - [Official Github](https://github.com/clovaai/frostnet#pretrained)
 - [Focal Loss for Dense Object Detection](https://arxiv.org/abs/1708.02002)
   - [pytorch-retinanet](https://github.com/yhenon/pytorch-retinanet)
+
+## TODOs
+
+- cIoU 등 추가 Loss 함수 구현
+- ATSS, Data Augmentation, LR Scheduler, Optimizer 등 mAP 향상을 위한 tricks 추가
+- Deployment를 위한 ONNX Conversion Script, Torch Script 추가
+- QAT, Grad Clip, SWA, FP16 등 학습 기법 추가 및 테스트
+- Backbone 추가 (MobileNet, EfficientNet, ResNet, RegNet ...)
