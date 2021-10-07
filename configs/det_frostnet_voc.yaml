@@ -1,0 +1,36 @@
+model: 'Frost_RetinaNet'
+dataset_name: 'VOC'
+classes: 20
+in_channels: 3
+train_list: '/workspace/host/Pascal/train.txt'
+val_list: '/workspace/host/Pascal/2007_test.txt'
+names: '/dataset/detection/names/pascal_voc.txt'
+input_size: 320
+
+workers: 32
+epochs: 1000
+batch_size: 32
+
+save_freq: 1
+save_dir: './saved'
+
+# model Define
+backbone: 'FrostNet'
+fpn: 'default'
+cls_subnet: 'default'
+reg_subnet: 'default'
+
+optimizer: 'sgd'
+optimizer_options:
+  lr: 3e-3
+  nesterov: true
+  momentum: 0.9
+  weight_decay: 1e-5
+
+trainer_options:
+  check_val_every_n_epoch: 5
+
+experimental_options:
+  callbaks:
+    - 'QAT'
+    - 'SWA'
