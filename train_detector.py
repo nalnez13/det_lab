@@ -61,7 +61,7 @@ def train(cfg):
                                  make_model_name(cfg)),
         gpus=cfg['gpus'],
         accelerator='ddp',
-        plugins=DDPPlugin(find_unused_parameters=False),
+        plugins=DDPPlugin(find_unused_parameters=True),
         callbacks=callbacks,
         **cfg['trainer_options'])
     trainer.fit(model_module, data_module)

@@ -25,7 +25,7 @@ class Detector(pl.LightningModule):
         loss = self.loss_fn([cls_pred, reg_pred, batch])
 
         self.log('train_loss', loss, prog_bar=True,
-                 logger=True, on_step=True, on_epoch=True, sync_dist=True)
+                 logger=True, on_step=True, on_epoch=True)
         return loss
 
     def on_validation_epoch_start(self):
