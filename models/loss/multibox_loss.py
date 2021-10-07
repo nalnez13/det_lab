@@ -73,18 +73,24 @@ class MultiBoxLoss(nn.Module):
             bboxes = bboxes[bboxes[:, 4] != -1]
 
             targets = torch.zeros_like(classification)
+            # no gt box
+            if bboxes.shape[0] == 0:
+                cls_loss = self.focal([cls_pred, targets])
+                cls_loss = cls_loss.sum()
+                cls_losses.append(cls_loss)
+                reg_losses.append(torch.tensor(0).to(device).float())
+                continue
 
-            if bboxes.shape[0]:
-                # sampling positive samples
-                IoU = calc_iou(anchors, bboxes[:, :4])
-                IoU_max, IoU_argmax = torch.max(IoU, dim=1)
+            # sampling positive samples
+            IoU = calc_iou(anchors, bboxes[:, :4])
+            IoU_max, IoU_argmax = torch.max(IoU, dim=1)
 
-                positive_samples = torch.ge(IoU_max, 0.5)
-                assigned_bboxes = bboxes[IoU_argmax, :]
+            positive_samples = torch.ge(IoU_max, 0.5)
+            assigned_bboxes = bboxes[IoU_argmax, :]
 
-                # calculate classification loss
-                targets[assigned_bboxes[positive_samples, 4].long(),
-                        positive_samples] = 1
+            # calculate classification loss
+            targets[assigned_bboxes[positive_samples, 4].long(),
+                    positive_samples] = 1
 
             cls_loss = self.focal([cls_pred, targets])
             cls_loss = cls_loss.sum() / \
