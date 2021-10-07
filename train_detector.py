@@ -15,6 +15,7 @@ from utils.yaml_helper import get_train_configs
 
 from module.detector import Detector
 from models.detector.retinanet import RetinaNet
+import platform
 
 
 def train(cfg):
@@ -60,8 +61,9 @@ def train(cfg):
         logger=TensorBoardLogger(cfg['save_dir'],
                                  make_model_name(cfg)),
         gpus=cfg['gpus'],
-        accelerator='ddp',
-        plugins=DDPPlugin(find_unused_parameters=True),
+        accelerator='ddp' if platform.system() != 'Windows' else None,
+        plugins=DDPPlugin(
+            find_unused_parameters=False) if platform.system() != 'Windows' else None,
         callbacks=callbacks,
         **cfg['trainer_options'])
     trainer.fit(model_module, data_module)

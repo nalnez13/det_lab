@@ -1,4 +1,5 @@
 import argparse
+from os import system
 
 import albumentations
 import albumentations.pytorch
@@ -12,6 +13,7 @@ from module.classifier import Classifier
 from utils.module_select import get_model
 from utils.utility import make_model_name
 from utils.yaml_helper import get_train_configs
+import platform
 
 
 def train(cfg):
@@ -56,8 +58,9 @@ def train(cfg):
         logger=TensorBoardLogger(cfg['save_dir'],
                                  make_model_name(cfg)),
         gpus=cfg['gpus'],
-        accelerator='ddp',
-        plugins=DDPPlugin(find_unused_parameters=False),
+        accelerator='ddp' if platform.system() != 'Windows' else None,
+        plugins=DDPPlugin(
+            find_unused_parameters=False) if platform.system() != 'Windows' else None,
         callbacks=callbacks,
         **cfg['trainer_options'])
     trainer.fit(model_module, data_module)
