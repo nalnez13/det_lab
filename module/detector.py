@@ -25,7 +25,7 @@ class Detector(pl.LightningModule):
         loss = self.loss_fn([cls_pred, reg_pred, batch])
 
         self.log('train_loss', loss, prog_bar=True,
-                 logger=True, on_step=True, on_epoch=True)
+                 logger=True, on_step=True, on_epoch=True, sync_dist=True)
         return loss
 
     def on_validation_epoch_start(self):
@@ -35,7 +35,7 @@ class Detector(pl.LightningModule):
         cls_pred, reg_pred = self.model(batch['img'])
         loss = self.loss_fn([cls_pred, reg_pred, batch])
 
-        self.log('val_loss', loss, logger=True, on_epoch=True)
+        self.log('val_loss', loss, logger=True, on_epoch=True, sync_dist=True)
         confidences, cls_idxes, boxes = self.transformer(
             [batch['img'], cls_pred, reg_pred])
 
@@ -57,9 +57,9 @@ class Detector(pl.LightningModule):
 
     def on_validation_epoch_end(self) -> None:
         ap_per_class, mAP = self.mAP.compute_map()
-        self.log('val_mAP', mAP, on_epoch=True, prog_bar=True)
+        self.log('val_mAP', mAP, on_epoch=True, prog_bar=True, sync_dist=True)
         for k, v in ap_per_class.items():
-            self.log(f'val_AP_{k}', v, on_epoch=True)
+            self.log(f'val_AP_{k}', v, on_epoch=True, sync_dist=True)
 
     def configure_optimizers(self):
         cfg = self.hparams.cfg

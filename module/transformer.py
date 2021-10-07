@@ -12,8 +12,6 @@ class Transformer(nn.Module):
         super().__init__()
         self.anchors = Anchors()
         self.std = torch.Tensor([[0.1, 0.1, 0.2, 0.2]]).t()
-        if torch.cuda.is_available:
-            self.std = self.std.cuda()
 
     def forward(self, x):
         """
@@ -54,13 +52,13 @@ class Transformer(nn.Module):
         return [scores_ret, cls_ret, boxes_ret]
 
     def regress_anchors(self, anchors, reg_pred):
-
+        std = self.std.type_as(anchors)
         widths = anchors[:, 2] - anchors[:, 0]
         heights = anchors[:, 3] - anchors[:, 1]
         cx = anchors[:, 0] + 0.5 * widths
         cy = anchors[:, 1] + 0.5 * heights
 
-        reg_pred = reg_pred * self.std
+        reg_pred = reg_pred * std
 
         dx = reg_pred[:, 0, :]
         dy = reg_pred[:, 1, :]
