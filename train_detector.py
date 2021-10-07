@@ -20,10 +20,9 @@ from models.detector.retinanet import RetinaNet
 def train(cfg):
     input_size = cfg['input_size']
     train_transforms = albumentations.Compose([
-        albumentations.RandomCropNearBBox(),
         albumentations.HorizontalFlip(p=0.5),
         albumentations.ColorJitter(),
-        albumentations.Resize(input_size, input_size, always_apply=True),
+        albumentations.RandomResizedCrop(input_size, input_size, (0.8, 1)),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
