@@ -26,31 +26,31 @@ class Transformer(nn.Module):
         anchors = self.anchors(image)
         boxes_pred = self.regress_anchors(anchors, reg_pred)
         boxes_pred = self.clip_anchors(boxes_pred, image)
+        boxes_pred = boxes_pred.permute(0, 2, 1)
 
         # for each classes
-        scores_ret = torch.Tensor([])
-        cls_ret = torch.Tensor([])
-        boxes_ret = torch.Tensor([])
-        if torch.cuda.is_available:
-            scores_ret = scores_ret.cuda()
-            cls_ret = cls_ret.cuda()
-            boxes_ret = boxes_ret.cuda()
-
-        for i in range(cls_pred.shape[1]):
-            scores = torch.squeeze(cls_pred[:, i, :])
-            over_thresh = scores > 0.05
-            if over_thresh.sum() == 0:
-                continue
-
-            scores = scores[over_thresh]
-            boxes = boxes_pred[over_thresh]
-            nms_idx = nms(boxes, scores, 0.5)
-            scores_ret = torch.cat((scores_ret, scores[nms_idx]))
-            cls_values = torch.tensor([i] * nms_idx.shape[0])
-            if torch.cuda.is_available:
-                cls_values = cls_values.cuda()
-            cls_ret = torch.cat((cls_ret, cls_values))
-            boxes_ret = torch.cat((boxes_ret, boxes[nms_idx]))
+        num_samples = image.shape[0]
+        scores_ret = [torch.empty(0, device=image.device)
+                      for b in range(num_samples)]
+        cls_ret = [torch.empty(0, device=image.device)
+                   for b in range(num_samples)]
+        boxes_ret = [torch.empty(0, device=image.device)
+                     for b in range(num_samples)]
+        for b in range(num_samples):
+            for i in range(cls_pred.shape[1]):
+                scores = torch.squeeze(cls_pred[b, i, :])
+                over_thresh = scores > 0.05
+                if over_thresh.sum() == 0:
+                    continue
+                scores = scores[over_thresh]
+                boxes = boxes_pred[b, over_thresh, :]
+                nms_idx = nms(boxes, scores, 0.5)
+                scores_ret[b] = torch.cat((scores_ret[b], scores[nms_idx]))
+                cls_values = torch.tensor([i] * nms_idx.shape[0])
+                if torch.cuda.is_available:
+                    cls_values = cls_values.cuda()
+                cls_ret[b] = torch.cat((cls_ret[b], cls_values))
+                boxes_ret[b] = torch.cat((boxes_ret[b], boxes[nms_idx]))
         return [scores_ret, cls_ret, boxes_ret]
 
     def regress_anchors(self, anchors, reg_pred):
@@ -62,10 +62,10 @@ class Transformer(nn.Module):
 
         reg_pred = reg_pred * self.std
 
-        dx = reg_pred[:, 0, :].squeeze()
-        dy = reg_pred[:, 1, :].squeeze()
-        dw = reg_pred[:, 2, :].squeeze()
-        dh = reg_pred[:, 3, :].squeeze()
+        dx = reg_pred[:, 0, :]
+        dy = reg_pred[:, 1, :]
+        dw = reg_pred[:, 2, :]
+        dh = reg_pred[:, 3, :]
 
         pred_cx = cx + dx * widths
         pred_cy = cy + dy * heights
@@ -83,8 +83,8 @@ class Transformer(nn.Module):
 
     def clip_anchors(self, anchors, img):
         b, c, h, w = img.shape
-        anchors[:, 0] = torch.clamp(anchors[:, 0], min=0)
-        anchors[:, 1] = torch.clamp(anchors[:, 1], min=0)
-        anchors[:, 2] = torch.clamp(anchors[:, 2], max=w)
-        anchors[:, 3] = torch.clamp(anchors[:, 3], max=h)
+        anchors[:, 0, :] = torch.clamp(anchors[:, 0, :], min=0)
+        anchors[:, 1, :] = torch.clamp(anchors[:, 1, :], min=0)
+        anchors[:, 2, :] = torch.clamp(anchors[:, 2, :], max=w)
+        anchors[:, 3, :] = torch.clamp(anchors[:, 3, :], max=h)
         return anchors
