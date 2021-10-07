@@ -74,7 +74,7 @@ class YoloFormat(pl.LightningDataModule):
             transforms=self.val_transforms,
             files_list=self.val_list),
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=False,
             num_workers=self.workers,
             persistent_workers=self.workers > 0,
             pin_memory=self.workers > 0,
