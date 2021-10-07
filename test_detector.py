@@ -63,7 +63,7 @@ def main(cfg, image_name, save):
         model = model.to('cuda')
 
     model_module = Detector.load_from_checkpoint(
-        'E:/projects/det_lab/saved/Frost_RetinaNet_VOC/version_1/checkpoints/last.ckpt',
+        'E:/projects/det_lab/saved/Frost_RetinaNet_VOC/version_0/checkpoints/last.ckpt',
         model=model)
 
     transformer = Transformer()
@@ -72,9 +72,12 @@ def main(cfg, image_name, save):
     cls_pred, reg_pred = model_module(image_inp)
     confidences, cls_idxes, boxes = transformer(
         [image_inp, cls_pred, reg_pred])
+
+    confidences = confidences[0]
+    cls_idxes = cls_idxes[0]
+    boxes = boxes[0]
     idxs = np.where(confidences.cpu() > 0.5)
-    print(idxs)
-    print(cls_idxes)
+
     for i in range(idxs[0].shape[0]):
         box = boxes[idxs[0][i]]
         x1 = int(box[0])
@@ -82,7 +85,7 @@ def main(cfg, image_name, save):
         x2 = int(box[2])
         y2 = int(box[3])
         name = names[int(cls_idxes[idxs[0][i]])]
-        conf = confidences[i]
+        conf = confidences[idxs[0][i]]
         color = colors[int(cls_idxes[idxs[0][i]])]
 
         image = visualize_detection(image, (x1, y1, x2, y2), name, conf, color)
