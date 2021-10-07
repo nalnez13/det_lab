@@ -5,10 +5,11 @@ in_channels: 3
 train_list: 'e:/voc_test.txt'
 val_list: 'e:/voc_test.txt'
 names: '/dataset/detection/names/pascal_voc.txt'
+input_size: 320
 
 workers: 1
 epochs: 1000
-batch_size: 12
+batch_size: 32
 
 save_freq: 1
 save_dir: './saved'

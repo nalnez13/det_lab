@@ -18,23 +18,18 @@ from models.detector.retinanet import RetinaNet
 
 
 def train(cfg):
+    input_size = cfg['input_size']
     train_transforms = albumentations.Compose([
-        # albumentations.HorizontalFlip(p=0.5),
-        # albumentations.VerticalFlip(p=0.5),
-        # albumentations.Posterize(),
-        # albumentations.RandomGamma(),
-        # albumentations.Equalize(),
-        # albumentations.HueSaturationValue(),
-        # albumentations.RandomBrightnessContrast(),
-        # albumentations.ColorJitter(),
-        # albumentations.ShiftScaleRotate(),
-        albumentations.Resize(320, 320, always_apply=True),
+        albumentations.RandomCropNearBBox(),
+        albumentations.HorizontalFlip(p=0.5),
+        albumentations.ColorJitter(),
+        albumentations.Resize(input_size, input_size, always_apply=True),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
 
     valid_transform = albumentations.Compose([
-        albumentations.Resize(320, 320, always_apply=True),
+        albumentations.Resize(input_size, input_size, always_apply=True),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
@@ -66,7 +61,8 @@ def train(cfg):
         logger=TensorBoardLogger(cfg['save_dir'],
                                  make_model_name(cfg)),
         gpus=cfg['gpus'],
-
+        accelerator='ddp',
+        plugins=DDPPlugin(find_unused_parameters=False),
         callbacks=callbacks,
         **cfg['trainer_options'])
     trainer.fit(model_module, data_module)
