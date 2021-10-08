@@ -14,7 +14,7 @@ def collater(data):
     Returns:
         [dict]: 정렬된 batch data.
         'img': list of image tensor
-        'annot': 동일 shape으로 정렬된 tensor
+        'annot': 동일 shape으로 정렬된 tensor [x1,y1,x2,y2] format
     """
     imgs = [s['image'] for s in data]
     bboxes = [torch.tensor(s['bboxes'])for s in data]
@@ -48,12 +48,12 @@ def visualize(images, bboxes, batch_idx=0):
         batch_idx (int, optional): [description]. Defaults to 0.
     """
     img = images[batch_idx].numpy()
-    img = (np.transpose(img, (1, 2, 0))*255.).astype(np.uint8)
+    img = (np.transpose(img, (1, 2, 0))*255.).astype(np.uint8).copy()
 
     for b in bboxes[batch_idx]:
-        x1, y1, w, h, cid = b.numpy()
+        x1, y1, x2, y2, cid = b.numpy()
         if cid > -1:
-            cv2.rectangle(img, (int(x1), int(y1)),
-                          (int(x1+w), int(y1+h)), (0, 255, 0))
+            img = cv2.rectangle(img, (int(x1), int(y1)),
+                                (int(x2), int(y2)), (0, 255, 0))
     cv2.imshow('img', img)
     cv2.waitKey(0)

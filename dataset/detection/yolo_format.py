@@ -92,15 +92,8 @@ if __name__ == '__main__':
 
     train_transforms = albumentations.Compose([
         albumentations.HorizontalFlip(p=0.5),
-        albumentations.VerticalFlip(p=0.5),
-        albumentations.Posterize(),
-        albumentations.RandomGamma(),
-        albumentations.Equalize(),
-        albumentations.HueSaturationValue(),
-        albumentations.RandomBrightnessContrast(),
         albumentations.ColorJitter(),
-        albumentations.ShiftScaleRotate(),
-        albumentations.Resize(300, 300, always_apply=True),
+        albumentations.RandomResizedCrop(320, 320, (0.8, 1)),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
