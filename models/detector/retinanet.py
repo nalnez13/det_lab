@@ -3,6 +3,8 @@ from models.detector.fpn import FeaturesPyramidNetwork
 from torch import nn
 import math
 
+from models.initialize import weight_initialize
+
 
 class ClassificationModel(nn.Module):
     def __init__(self, num_classes, in_features, num_anchors=9,
@@ -45,6 +47,7 @@ class ClassificationModel(nn.Module):
                                 kernel_size=3, stride=1, padding=1)
         self.output_act = nn.Sigmoid()
 
+        weight_initialize(self)
         self.output.weight.data.fill_(0)
         self.output.bias.data.fill_(-math.log((1.0 - prior)/prior))
 
@@ -115,6 +118,7 @@ class RegressionModel(nn.Module):
         self.output = nn.Conv2d(feature_size, num_anchors*4,
                                 kernel_size=3, stride=1, padding=1)
 
+        weight_initialize(self)
         self.output.weight.data.fill_(0)
         self.output.bias.data.fill_(0)
 
