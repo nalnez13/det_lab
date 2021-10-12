@@ -75,7 +75,7 @@ class MultiBoxLoss(nn.Module):
             targets = torch.zeros_like(classification)
             # no gt box
             if bboxes.shape[0] == 0:
-                cls_loss = self.focal([cls_pred, targets])
+                cls_loss = self.focal([classification, targets])
                 cls_loss = cls_loss.sum()
                 cls_losses.append(cls_loss)
                 reg_losses.append(torch.tensor(0).to(device).float())
@@ -92,7 +92,7 @@ class MultiBoxLoss(nn.Module):
             targets[assigned_bboxes[positive_samples, 4].long(),
                     positive_samples] = 1
 
-            cls_loss = self.focal([cls_pred, targets])
+            cls_loss = self.focal([classification, targets])
             cls_loss = cls_loss.sum() / \
                 torch.clamp(positive_samples.sum().float(), min=1)
             cls_losses.append(cls_loss)
