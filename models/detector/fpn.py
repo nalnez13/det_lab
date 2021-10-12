@@ -1,5 +1,7 @@
 from torch import nn
 
+from models.initialize import weight_initialize
+
 
 class FeaturesPyramidNetwork(nn.Module):
     def __init__(self, fpn_sizes, feature_size=256):
@@ -44,6 +46,7 @@ class FeaturesPyramidNetwork(nn.Module):
         self.P7_2 = nn.Conv2d(feature_size, feature_size,
                               kernel_size=3, stride=2, padding=1)
         self.P7_2_bn = nn.BatchNorm2d(feature_size)
+        weight_initialize(self)
 
     def forward(self, s3, s4, s5):
         """FPN Forward
