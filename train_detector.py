@@ -65,6 +65,7 @@ def train(cfg):
         plugins=DDPPlugin(
             find_unused_parameters=False) if platform.system() != 'Windows' else None,
         callbacks=callbacks,
+        gradient_clip_val=0.1,
         **cfg['trainer_options'])
     trainer.fit(model_module, data_module)
 
