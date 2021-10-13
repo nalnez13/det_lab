@@ -9,7 +9,7 @@ input_size: 320
 
 workers: 32
 epochs: 1000
-batch_size: 32
+batch_size: 16
 
 save_freq: 1
 save_dir: './saved'
@@ -22,10 +22,10 @@ reg_subnet: 'default'
 
 optimizer: 'sgd'
 optimizer_options:
-  lr: 3e-3
+  lr: 1e-3
   nesterov: true
   momentum: 0.9
-  weight_decay: 1e-5
+  weight_decay: 1e-4
 
 trainer_options:
   check_val_every_n_epoch: 5

@@ -35,7 +35,8 @@ class Detector(pl.LightningModule):
         cls_pred, reg_pred = self.model(batch['img'])
         loss = self.loss_fn([cls_pred, reg_pred, batch])
 
-        self.log('val_loss', loss, logger=True, on_epoch=True, sync_dist=True)
+        self.log('val_loss', loss, logger=True, on_epoch=True,
+                 sync_dist=True, prog_bar=True)
         confidences, cls_idxes, boxes = self.transformer(
             [batch['img'], cls_pred, reg_pred])
 
@@ -53,7 +54,6 @@ class Detector(pl.LightningModule):
                 gt_cls.cpu().numpy()
             )
             self.mAP.evaluate(*data)
-        return loss
 
     def on_validation_epoch_end(self) -> None:
         ap_per_class, mAP = self.mAP.compute_map()
@@ -76,6 +76,6 @@ class Detector(pl.LightningModule):
                         T_mult=2,
                         eta_max=cfg['optimizer_options']['lr'],
                         T_up=epoch_length,
-                        gamma=0.98),
+                        gamma=0.96),
                     'interval': 'step'}
                 }
