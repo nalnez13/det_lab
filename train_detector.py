@@ -18,7 +18,7 @@ from models.detector.retinanet import RetinaNet
 import platform
 
 
-def train(cfg):
+def train(cfg, ckpt=None):
     input_size = cfg['input_size']
     train_transforms = albumentations.Compose([
         albumentations.HorizontalFlip(p=0.5),
@@ -47,6 +47,7 @@ def train(cfg):
 
     model = RetinaNet(backbone, fpn, cls_sub, reg_sub,
                       cfg['classes'], cfg['in_channels'])
+
     model_module = Detector(
         model, cfg, epoch_length=data_module.train_dataloader().__len__())
 
@@ -64,6 +65,7 @@ def train(cfg):
         accelerator='ddp' if platform.system() != 'Windows' else None,
         plugins=DDPPlugin() if platform.system() != 'Windows' else None,
         callbacks=callbacks,
+        resume_from_checkpoint=ckpt,
         **cfg['trainer_options'])
     trainer.fit(model_module, data_module)
 
@@ -72,8 +74,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', required=True, type=str,
                         help='Train config file')
+    parser.add_argument('--ckpt', required=False, type=str,
+                        help='Train checkpoint')
 
     args = parser.parse_args()
     cfg = get_train_configs(args.cfg)
 
-    train(cfg)
+    train(cfg, args.ckpt)
