@@ -8,7 +8,7 @@ names: '/dataset/detection/names/pascal_voc.txt'
 input_size: 320
 
 workers: 32
-epochs: 1000
+epochs: 500
 batch_size: 64
 
 save_freq: 1
@@ -25,7 +25,7 @@ optimizer_options:
   lr: 1e-3
   nesterov: true
   momentum: 0.9
-  weight_decay: 1e-4
+  weight_decay: 5e-4
 
 cls_loss: 'focal_loss'
 reg_loss: 'ciou_loss'
@@ -34,6 +34,5 @@ trainer_options:
   check_val_every_n_epoch: 5
 
 experimental_options:
-  callbaks:
-    - 'QAT'
+  callbacks:
     - 'SWA'
