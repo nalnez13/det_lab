@@ -8,7 +8,7 @@ names: '/dataset/detection/names/pascal_voc.txt'
 input_size: 320
 
 workers: 1
-epochs: 1000
+epochs: 500
 batch_size: 10
 
 save_freq: 1
@@ -35,6 +35,5 @@ trainer_options:
 
 experimental_options:
   os: 'windows' # add this option if an error about NCCL occurs in windows
-  callbaks:
-    - 'QAT'
+  callbacks:
     - 'SWA'

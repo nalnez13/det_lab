@@ -7,13 +7,13 @@ PyTorch 기반 Object Detection 모델 구조 및 학습 기법을 테스트하�
 ## Implementations
 
 - RetinaNet
-- FrostNet
 - Focal Loss
+- FrostNet
 - Muti GPU Training
 - Data Augmentations
 - mAP Calculation
 - Cosine Annealing Warmup Restart L.R. Scheduler
--
+- cIoU Loss
 
 ## 프로젝트 구조
 
@@ -39,7 +39,7 @@ det_lab
 `pytorch >= 1.8.1`  
 `albumentations`  
 `PyYaml`  
-`Pytorch Lightning`
+`PyTorch Lightning`
 
 ## Config Train Parameters
 
@@ -88,11 +88,14 @@ Object Detector 모델 Train 스크립트 입니다.
 - [FrostNet: Towards Quantization-Aware Network Architecture Search-CLOVA AI](https://arxiv.org/abs/2006.09679)
   - [Official Github](https://github.com/clovaai/frostnet#pretrained)
 - [Focal Loss for Dense Object Detection](https://arxiv.org/abs/1708.02002)
+
   - [pytorch-retinanet](https://github.com/yhenon/pytorch-retinanet)
+
+- [Distance-IoU Loss: Faster and Better Learning for Bounding Box Regression](https://arxiv.org/pdf/1911.08287.pdf)
+  - [Official Github](https://github.com/Zzh-tju/CIoU)
 
 ## TODOs
 
-- cIoU 등 추가 Loss 함수 구현
 - ATSS, Data Augmentation, LR Scheduler, Optimizer 등 mAP 향상을 위한 tricks 추가
 - Deployment를 위한 ONNX Conversion Script, Torch Script 추가
 - QAT, Grad Clip, SWA, FP16 등 학습 기법 추가 및 테스트

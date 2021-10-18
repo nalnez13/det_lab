@@ -7,7 +7,7 @@ import albumentations.pytorch
 import pytorch_lightning as pl
 from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint, StochasticWeightAveraging, QuantizationAwareTraining
 
 from dataset.detection import yolo_format
 from utils.module_select import get_cls_subnet, get_fpn, get_model, get_reg_subnet
@@ -16,6 +16,19 @@ from utils.yaml_helper import get_train_configs
 from module.detector import Detector
 from models.detector.retinanet import RetinaNet
 import platform
+
+
+def add_experimental_callbacks(cfg, train_callbacks):
+    options = {
+        'SWA': StochasticWeightAveraging(),
+        'QAT': QuantizationAwareTraining()
+    }
+    callbacks = cfg['experimental_options']['callbacks']
+    if callbacks:
+        for option in callbacks:
+            train_callbacks.append(options[option])
+
+    return train_callbacks
 
 
 def train(cfg, ckpt=None):
@@ -54,8 +67,10 @@ def train(cfg, ckpt=None):
     callbacks = [
         LearningRateMonitor(logging_interval='step'),
         ModelCheckpoint(monitor='val_loss', save_last=True,
-                        every_n_epochs=cfg['save_freq'])
+                        every_n_epochs=cfg['save_freq']),
     ]
+
+    callbacks = add_experimental_callbacks(cfg, callbacks)
 
     trainer = pl.Trainer(
         max_epochs=cfg['epochs'],
