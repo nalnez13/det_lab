@@ -54,8 +54,6 @@ def smooth_l1_loss(positive_anchors, gt_samples, prediction):
     dh = torch.log(gt_height / anchors_height_pi)
 
     targets = torch.stack((dx, dy, dw, dh))
-    # targets = targets / \
-    #     torch.Tensor([[0.1, 0.1, 0.2, 0.2]]).t().type_as(positive_anchors)
 
     diff = torch.abs(targets - prediction)
     reg_loss = torch.where(
@@ -89,7 +87,8 @@ def cIoU_loss(positive_anchors, gt_samples, prediction):
     inter_x2 = torch.min(gt_cx + gt_width * 0.5, pred_cx + pred_width * 0.5)
     inter_y1 = torch.max(gt_cy - gt_height * 0.5, pred_cy - pred_height * 0.5)
     inter_y2 = torch.min(gt_cy + gt_height * 0.5, pred_cy + pred_height * 0.5)
-    inter_area = (inter_x2 - inter_x1) * (inter_y2 - inter_y1)
+    inter_area = torch.clamp((inter_x2 - inter_x1) *
+                             (inter_y2 - inter_y1), min=1e-6)
 
     enclosure_x1 = torch.min(gt_cx - gt_width * 0.5,
                              pred_cx - pred_width * 0.5)
@@ -101,20 +100,20 @@ def cIoU_loss(positive_anchors, gt_samples, prediction):
                              pred_cy + pred_height * 0.5)
 
     inter_diag = (gt_cx - pred_cx)**2 + (gt_cy - pred_cy)**2
-    enclosure_diag = torch.clamp(enclosure_x2 - enclosure_x1, min=0)**2 + \
-        torch.clamp(enclosure_y2 - enclosure_y1, min=0)**2
+    enclosure_diag = (enclosure_x2 - enclosure_x1)**2 + \
+        (enclosure_y2 - enclosure_y1)**2
 
     union = gt_area + pred_area - inter_area
-    u = inter_diag / enclosure_diag
-    iou = inter_area / union
+    u = inter_diag / torch.clamp(enclosure_diag, min=1e-6)
+    iou = inter_area / torch.clamp(union, min=1e-6)
     v = (4 / (math.pi ** 2)) * torch.pow(torch.atan(gt_width / gt_height) -
-                                         torch.atan(pred_width/pred_height), 2)
+                                         torch.atan(pred_width / pred_height), 2)
     with torch.no_grad():
         S = (iou > 0.5).float()
-        alpha = S * v / (1 - iou + v)
+        alpha = S * v / torch.clamp(1 - iou + v, min=1e-6)
     cIoU = iou - u - alpha * v
     cIoU = torch.clamp(cIoU, min=-1.0, max=1.0)
-    return cIoU
+    return 1 - cIoU
 
 
 class MultiBoxLoss(nn.Module):
@@ -202,10 +201,10 @@ class MultiBoxLoss(nn.Module):
                 assigned_bboxes = assigned_bboxes[positive_samples, :]
                 gt_width = assigned_bboxes[:, 2] - assigned_bboxes[:, 0]
                 gt_height = assigned_bboxes[:, 3] - assigned_bboxes[:, 1]
-                gt_cx = assigned_bboxes[:, 0] + 0.5 * gt_width
-                gt_cy = assigned_bboxes[:, 1] + 0.5 * gt_height
                 gt_width = torch.clamp(gt_width, min=1)
                 gt_height = torch.clamp(gt_height, min=1)
+                gt_cx = assigned_bboxes[:, 0] + 0.5 * gt_width
+                gt_cy = assigned_bboxes[:, 1] + 0.5 * gt_height
 
                 gt_samples = torch.stack(
                     [gt_cx, gt_cy, gt_width, gt_height])
