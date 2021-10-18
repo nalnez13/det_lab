@@ -20,12 +20,12 @@ fpn: 'default'
 cls_subnet: 'default'
 reg_subnet: 'default'
 
-optimizer: 'adam'
+optimizer: 'sgd'
 optimizer_options:
-  lr: 3e-3
-  # nesterov: true
-  # momentum: 0.9
-  weight_decay: 1e-5
+  lr: 1e-3
+  nesterov: true
+  momentum: 0.9
+  weight_decay: 1e-4
 
 cls_loss: 'focal_loss'
 reg_loss: 'ciou_loss'
