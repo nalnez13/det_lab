@@ -1,3 +1,4 @@
+import math
 from models.loss.focal_loss import FocalLoss
 from models.detector.anchors import Anchors
 import torch
@@ -36,11 +37,99 @@ def calc_iou(anchors, boxes):
     return IoU
 
 
+def smooth_l1_loss(positive_anchors, gt_samples, prediction):
+    anchors_cx_pi = positive_anchors[0]
+    anchors_cy_pi = positive_anchors[1]
+    anchors_width_pi = positive_anchors[2]
+    anchors_height_pi = positive_anchors[3]
+
+    gt_cx = gt_samples[0]
+    gt_cy = gt_samples[1]
+    gt_width = gt_samples[2]
+    gt_height = gt_samples[3]
+
+    dx = (gt_cx - anchors_cx_pi) / anchors_width_pi
+    dy = (gt_cy - anchors_cy_pi) / anchors_height_pi
+    dw = torch.log(gt_width / anchors_width_pi)
+    dh = torch.log(gt_height / anchors_height_pi)
+
+    targets = torch.stack((dx, dy, dw, dh))
+    # targets = targets / \
+    #     torch.Tensor([[0.1, 0.1, 0.2, 0.2]]).t().type_as(positive_anchors)
+
+    diff = torch.abs(targets - prediction)
+    reg_loss = torch.where(
+        torch.le(diff, 1/9.),
+        0.5 * 9.0 * torch.pow(diff, 2),
+        diff - 0.5 / 9.
+    )
+    return reg_loss
+
+
+def cIoU_loss(positive_anchors, gt_samples, prediction):
+    anchors_cx_pi = positive_anchors[0]
+    anchors_cy_pi = positive_anchors[1]
+    anchors_width_pi = positive_anchors[2]
+    anchors_height_pi = positive_anchors[3]
+
+    gt_cx = gt_samples[0]
+    gt_cy = gt_samples[1]
+    gt_width = gt_samples[2]
+    gt_height = gt_samples[3]
+
+    pred_cx = anchors_cx_pi + prediction[0] * anchors_width_pi
+    pred_cy = anchors_cy_pi + prediction[1] * anchors_height_pi
+    pred_width = torch.exp(prediction[2]) * anchors_width_pi
+    pred_height = torch.exp(prediction[3]) * anchors_height_pi
+
+    gt_area = gt_width * gt_height
+    pred_area = pred_width * pred_height
+
+    inter_x1 = torch.max(gt_cx - gt_width * 0.5, pred_cx - pred_width * 0.5)
+    inter_x2 = torch.min(gt_cx + gt_width * 0.5, pred_cx + pred_width * 0.5)
+    inter_y1 = torch.max(gt_cy - gt_height * 0.5, pred_cy - pred_height * 0.5)
+    inter_y2 = torch.min(gt_cy + gt_height * 0.5, pred_cy + pred_height * 0.5)
+    inter_area = (inter_x2 - inter_x1) * (inter_y2 - inter_y1)
+
+    enclosure_x1 = torch.min(gt_cx - gt_width * 0.5,
+                             pred_cx - pred_width * 0.5)
+    enclosure_x2 = torch.max(gt_cx + gt_width * 0.5,
+                             pred_cx + pred_width * 0.5)
+    enclosure_y1 = torch.min(gt_cy - gt_height * 0.5,
+                             pred_cy - pred_height * 0.5)
+    enclosure_y2 = torch.max(gt_cy + gt_height * 0.5,
+                             pred_cy + pred_height * 0.5)
+
+    inter_diag = (gt_cx - pred_cx)**2 + (gt_cy - pred_cy)**2
+    enclosure_diag = torch.clamp(enclosure_x2 - enclosure_x1, min=0)**2 + \
+        torch.clamp(enclosure_y2 - enclosure_y1, min=0)**2
+
+    union = gt_area + pred_area - inter_area
+    u = inter_diag / enclosure_diag
+    iou = inter_area / union
+    v = (4 / (math.pi ** 2)) * torch.pow(torch.atan(gt_width / gt_height) -
+                                         torch.atan(pred_width/pred_height), 2)
+    with torch.no_grad():
+        S = (iou > 0.5).float()
+        alpha = S * v / (1 - iou + v)
+    cIoU = iou - u - alpha * v
+    cIoU = torch.clamp(cIoU, min=-1.0, max=1.0)
+    return cIoU
+
+
 class MultiBoxLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, cfg):
         super().__init__()
         self.anchors = Anchors()
         self.focal = FocalLoss()
+        self.reg_loss = None
+
+        if cfg['reg_loss'] == 'ciou_loss':
+            self.reg_loss = cIoU_loss
+        else:  # 'smooth_l1'
+            self.reg_loss = smooth_l1_loss
+
+        self.std = torch.Tensor([[0.1, 0.1, 0.2, 0.2]]).t()
 
     def forward(self, x):
         """calculate loss
@@ -54,6 +143,8 @@ class MultiBoxLoss(nn.Module):
         imgs = samples['img']
         annots = samples['annot']
         anchors = self.anchors(imgs)
+        std = self.std.type_as(anchors)
+        reg_pred = reg_pred * std
         device = imgs.device
 
         anchors_width = anchors[:, 2] - anchors[:, 0]
@@ -104,6 +195,10 @@ class MultiBoxLoss(nn.Module):
                 anchors_cx_pi = anchors_cx[positive_samples]
                 anchors_cy_pi = anchors_cy[positive_samples]
 
+                positive_anchors = torch.stack(
+                    [anchors_cx_pi, anchors_cy_pi,
+                     anchors_width_pi, anchors_height_pi])
+
                 assigned_bboxes = assigned_bboxes[positive_samples, :]
                 gt_width = assigned_bboxes[:, 2] - assigned_bboxes[:, 0]
                 gt_height = assigned_bboxes[:, 3] - assigned_bboxes[:, 1]
@@ -112,23 +207,14 @@ class MultiBoxLoss(nn.Module):
                 gt_width = torch.clamp(gt_width, min=1)
                 gt_height = torch.clamp(gt_height, min=1)
 
-                dx = (gt_cx - anchors_cx_pi) / anchors_width_pi
-                dy = (gt_cy - anchors_cy_pi) / anchors_height_pi
-                dw = torch.log(gt_width / anchors_width_pi)
-                dh = torch.log(gt_height / anchors_height_pi)
+                gt_samples = torch.stack(
+                    [gt_cx, gt_cy, gt_width, gt_height])
 
-                targets = torch.stack((dx, dy, dw, dh))
-                targets = targets / \
-                    torch.Tensor([[0.1, 0.1, 0.2, 0.2]]).to(device).t()
+                loss = self.reg_loss(positive_anchors, gt_samples,
+                                     regression[:, positive_samples])
 
-                diff = torch.abs(targets - regression[:, positive_samples])
-                reg_loss = torch.where(
-                    torch.le(diff, 1/9.),
-                    0.5 * 9.0 * torch.pow(diff, 2),
-                    diff - 0.5 / 9.
-                )
-                reg_losses.append(reg_loss.mean())
+                reg_losses.append(loss.mean())
             else:
                 reg_losses.append(torch.tensor(0).to(device).float())
 
-        return torch.stack(cls_losses).mean() + torch.stack(reg_losses).mean()
+        return torch.stack(cls_losses).mean(), torch.stack(reg_losses).mean()

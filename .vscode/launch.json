@@ -10,7 +10,7 @@
       "request": "launch",
       "program": "train_detector.py",
       "console": "integratedTerminal",
-      "args": ["--cfg", "./configs/det_frostnet.yaml"]
+      "args": ["--cfg", "./configs/det_frostnet_voc.yaml"]
     },
     {
       "name": "this File",

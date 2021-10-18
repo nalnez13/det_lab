@@ -13,7 +13,7 @@ class Detector(pl.LightningModule):
         self.save_hyperparameters(ignore='model')
         self.model = model
         self.transformer = Transformer()
-        self.loss_fn = MultiBoxLoss()
+        self.loss_fn = MultiBoxLoss(cfg)
         self.mAP = DetectionMAP(cfg['classes'])
 
     def forward(self, x):
@@ -22,9 +22,14 @@ class Detector(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         cls_pred, reg_pred = self.model(batch['img'])
-        loss = self.loss_fn([cls_pred, reg_pred, batch])
+        cls_loss, reg_loss = self.loss_fn([cls_pred, reg_pred, batch])
+        loss = cls_loss + reg_loss
 
         self.log('train_loss', loss, prog_bar=True,
+                 logger=True, on_step=True, on_epoch=True)
+        self.log('train_cls_loss', cls_loss,
+                 logger=True, on_step=True, on_epoch=True)
+        self.log('train_reg_loss', reg_loss,
                  logger=True, on_step=True, on_epoch=True)
         return loss
 
@@ -33,10 +38,15 @@ class Detector(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         cls_pred, reg_pred = self.model(batch['img'])
-        loss = self.loss_fn([cls_pred, reg_pred, batch])
+        cls_loss, reg_loss = self.loss_fn([cls_pred, reg_pred, batch])
+        loss = cls_loss + reg_loss
 
         self.log('val_loss', loss, logger=True, on_epoch=True,
                  sync_dist=True, prog_bar=True)
+        self.log('val_cls_loss', cls_loss,
+                 logger=True, on_step=True, on_epoch=True)
+        self.log('val_reg_loss', reg_loss,
+                 logger=True, on_step=True, on_epoch=True)
         confidences, cls_idxes, boxes = self.transformer(
             [batch['img'], cls_pred, reg_pred])
 
