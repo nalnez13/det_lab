@@ -108,7 +108,6 @@ def cIoU_loss(positive_anchors, gt_samples, prediction):
     iou = inter_area / torch.clamp(union, min=1e-6)
     v = (4 / (math.pi ** 2)) * torch.pow(torch.atan(gt_width / gt_height) -
                                          torch.atan(pred_width / pred_height), 2)
-    print(iou)
     with torch.no_grad():
         S = (iou > 0.5).float()
         alpha = S * v / torch.clamp(1 - iou + v, min=1e-6)
