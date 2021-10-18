@@ -87,8 +87,8 @@ def cIoU_loss(positive_anchors, gt_samples, prediction):
     inter_x2 = torch.min(gt_cx + gt_width * 0.5, pred_cx + pred_width * 0.5)
     inter_y1 = torch.max(gt_cy - gt_height * 0.5, pred_cy - pred_height * 0.5)
     inter_y2 = torch.min(gt_cy + gt_height * 0.5, pred_cy + pred_height * 0.5)
-    inter_area = torch.clamp((inter_x2 - inter_x1) *
-                             (inter_y2 - inter_y1), min=1e-6)
+    inter_area = torch.clamp((inter_x2 - inter_x1), min=0) * \
+        torch.clamp((inter_y2 - inter_y1), min=0)
 
     enclosure_x1 = torch.min(gt_cx - gt_width * 0.5,
                              pred_cx - pred_width * 0.5)
@@ -100,14 +100,15 @@ def cIoU_loss(positive_anchors, gt_samples, prediction):
                              pred_cy + pred_height * 0.5)
 
     inter_diag = (gt_cx - pred_cx)**2 + (gt_cy - pred_cy)**2
-    enclosure_diag = (enclosure_x2 - enclosure_x1)**2 + \
-        (enclosure_y2 - enclosure_y1)**2
+    enclosure_diag = torch.clamp(enclosure_x2 - enclosure_x1, min=0)**2 + \
+        torch.clamp(enclosure_y2 - enclosure_y1, min=0)**2
 
     union = gt_area + pred_area - inter_area
     u = inter_diag / torch.clamp(enclosure_diag, min=1e-6)
     iou = inter_area / torch.clamp(union, min=1e-6)
     v = (4 / (math.pi ** 2)) * torch.pow(torch.atan(gt_width / gt_height) -
                                          torch.atan(pred_width / pred_height), 2)
+    print(iou)
     with torch.no_grad():
         S = (iou > 0.5).float()
         alpha = S * v / torch.clamp(1 - iou + v, min=1e-6)
