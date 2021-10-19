@@ -1,10 +1,12 @@
 import pytorch_lightning as pl
 from models.loss.multibox_loss import MultiBoxLoss
+from module.sam_optimizer import SAM
 from utils.mAP_evaluate import DetectionMAP
 from utils.module_select import get_optimizer
 
 from module.lr_scheduler import CosineAnnealingWarmUpRestarts
 from module.transformer import Transformer
+from torch import nn
 
 
 class Detector(pl.LightningModule):
@@ -15,15 +17,18 @@ class Detector(pl.LightningModule):
         self.transformer = Transformer()
         self.loss_fn = MultiBoxLoss(cfg)
         self.mAP = DetectionMAP(cfg['classes'])
+        if cfg['optimizer'] == 'sam':
+            self.automatic_optimization = False
 
     def forward(self, x):
         cls_pred, reg_pred = self.model(x)
         return cls_pred, reg_pred
 
     def training_step(self, batch, batch_idx):
-        cls_pred, reg_pred = self.model(batch['img'])
-        cls_loss, reg_loss = self.loss_fn([cls_pred, reg_pred, batch])
-        loss = cls_loss + reg_loss
+        if self.hparams.cfg['optimizer'] == 'sam':
+            loss, cls_loss, reg_loss = self.sam_opt_training_step(batch)
+        else:
+            loss, cls_loss, reg_loss = self.common_opt_training_step(batch)
 
         self.log('train_loss', loss, prog_bar=True,
                  logger=True, on_step=True, on_epoch=True)
@@ -31,7 +36,34 @@ class Detector(pl.LightningModule):
                  logger=True, on_step=True, on_epoch=True)
         self.log('train_reg_loss', reg_loss,
                  logger=True, on_step=True, on_epoch=True)
+
         return loss
+
+    def sam_opt_training_step(self, batch):
+        self.enable_running_stats(self.model)
+        opt = self.optimizers()
+        cls_pred, reg_pred = self.model(batch['img'])
+        cls_loss, reg_loss = self.loss_fn([cls_pred, reg_pred, batch])
+        loss = cls_loss + reg_loss
+        self.manual_backward(loss)
+        opt.first_step(zero_grad=True)
+
+        self.disable_running_stats(self.model)
+        cls_pred, reg_pred = self.model(batch['img'])
+        cls_loss, reg_loss = self.loss_fn([cls_pred, reg_pred, batch])
+        loss = cls_loss + reg_loss
+        self.manual_backward(loss)
+        opt.second_step(zero_grad=True)
+
+        sch = self.lr_schedulers()
+        sch.step()
+        return loss, cls_loss, reg_loss
+
+    def common_opt_training_step(self, batch):
+        cls_pred, reg_pred = self.model(batch['img'])
+        cls_loss, reg_loss = self.loss_fn([cls_pred, reg_pred, batch])
+        loss = cls_loss + reg_loss
+        return loss, cls_loss, reg_loss
 
     def on_validation_epoch_start(self):
         self.mAP.reset_accumulators()
@@ -74,18 +106,38 @@ class Detector(pl.LightningModule):
     def configure_optimizers(self):
         cfg = self.hparams.cfg
         epoch_length = self.hparams.epoch_length
-        optim = get_optimizer(cfg['optimizer'])(
-            params=self.model.parameters(),
+        optim = get_optimizer(
+            cfg['optimizer'],
+            self.model.parameters(),
             **cfg['optimizer_options'])
+
+        scheduler = CosineAnnealingWarmUpRestarts(
+            optim,
+            epoch_length*4,
+            T_mult=2,
+            eta_max=cfg['optimizer_options']['lr'],
+            T_up=epoch_length,
+            gamma=0.96)
 
         return {"optimizer": optim,
                 "lr_scheduler": {
-                    "scheduler":
-                    CosineAnnealingWarmUpRestarts(
-                        optim, epoch_length*4,
-                        T_mult=2,
-                        eta_max=cfg['optimizer_options']['lr'],
-                        T_up=epoch_length,
-                        gamma=0.96),
+                    "scheduler": scheduler,
                     'interval': 'step'}
                 }
+
+    @staticmethod
+    def disable_running_stats(model):
+        def _disable(module):
+            if isinstance(module, nn.BatchNorm2d):
+                module.backup_momentum = module.momentum
+                module.momentum = 0
+
+        model.apply(_disable)
+
+    @staticmethod
+    def enable_running_stats(model):
+        def _enable(module):
+            if isinstance(module, nn.BatchNorm2d) and hasattr(module, "backup_momentum"):
+                module.momentum = module.backup_momentum
+
+        model.apply(_enable)
