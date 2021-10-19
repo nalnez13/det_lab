@@ -71,6 +71,29 @@ Object Detector 모델 Train 스크립트 입니다.
 
     python train_detector.py --cfg configs/det_frostnet.yaml
 
+### Detector Configuration
+
+    classes: 20     # 검출대상 클래스 수
+    in_channels: 3  # Input Image Channel 수
+    train_list: 'e:/voc_test.txt' # Dataset list
+    val_list: 'e:/voc_test.txt'
+    names: '/dataset/detection/names/pascal_voc.txt' # 검출대상 클래스 명
+    input_size: 320 # Input Image Size
+
+    optimizer: 'sam' # Optimizer 설정 (sam, sgd, adam)
+    optimizer_options:
+      lr: 1e-3
+      nesterov: true
+      momentum: 0.9
+      weight_decay: 5e-4
+
+    cls_loss: 'focal_loss'
+    reg_loss: 'ciou_loss' # Regression Loss 함수 (smooth_l1, ciou_loss)
+
+    experimental_options:
+      callbacks:
+        - 'SWA' # Enable Stochastic Weight Averaging Option
+
 ## Test detector
 
 학습된 Object Detector로 inference test를 하기 위한 스크립트 입니다.
@@ -92,7 +115,11 @@ Object Detector 모델 Train 스크립트 입니다.
   - [pytorch-retinanet](https://github.com/yhenon/pytorch-retinanet)
 
 - [Distance-IoU Loss: Faster and Better Learning for Bounding Box Regression](https://arxiv.org/pdf/1911.08287.pdf)
+
   - [Official Github](https://github.com/Zzh-tju/CIoU)
+
+- [Sharpness-Aware Minimization for Efficiently Improving Generalization](https://arxiv.org/abs/2010.01412)
+  - [Unofficial Github](https://github.com/davda54/sam)
 
 ## TODOs
 
