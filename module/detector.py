@@ -83,7 +83,7 @@ class Detector(pl.LightningModule):
                     "scheduler":
                     CosineAnnealingWarmUpRestarts(
                         optim, epoch_length*4,
-                        T_mult=1,
+                        T_mult=2,
                         eta_max=cfg['optimizer_options']['lr'],
                         T_up=epoch_length,
                         gamma=0.96),
